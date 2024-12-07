@@ -2,6 +2,7 @@ use std::{
     collections::{hash_map::DefaultHasher, HashMap},
     fs,
     hash::{Hash, Hasher},
+    path,
 };
 
 use swc_core::{
@@ -9,10 +10,17 @@ use swc_core::{
     plugin::{plugin_transform, proxies::TransformPluginProgramMetadata},
 };
 
+#[derive(serde::Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+enum Mode {
+    Check,
+    Generate,
+}
+
 pub struct TransformVisitor {
     commit_hash: String,
     file_path: String,
-    mode: String,
+    mode: Mode,
     string_occurrences: HashMap<String, usize>,
 }
 
@@ -84,17 +92,15 @@ impl TransformVisitor {
             "occurrence_count": self.string_occurrences[&error_message]
         })
         .to_string();
-        let mut retries = 3;
 
         // Do not do FS operations in unit tests
         if cfg!(test) {
             return error_code;
         }
-
-        loop {
-            if self.mode == "check" {
+        match self.mode {
+            Mode::Check => {
                 let error_code_path = format!("cwd/error_codes/{}.json", hash);
-                if !std::path::Path::new(&error_code_path).exists() {
+                if !path::Path::new(&error_code_path).exists() {
                     panic!(
                         "ERROR: File {} does not exist.\n\nREQUIRED ACTION:\n1. Run `pnpm \
                          build`\n2. Commit all file changes from \
@@ -103,29 +109,15 @@ impl TransformVisitor {
                         format!("/packages/next/error_codes/{}.json", hash)
                     );
                 }
-                return error_code;
+                error_code
             }
-
-            if self.mode != "generate" {
-                panic!("Mode must be 'generate', got '{}'", self.mode);
-            }
-
-            fs::create_dir_all("cwd/error_codes").unwrap_or_else(|e| {
-                panic!("Failed to create error_codes directory: {}", e);
-            });
-
-            match fs::write(format!("cwd/error_codes/{}.json", hash), &error_metadata) {
-                Ok(_) => break,
-                Err(e) => {
-                    retries -= 1;
-                    if retries == 0 {
-                        panic!("Failed to write error metadata after 3 retries: {}", e);
-                    }
-                }
+            Mode::Generate => {
+                let _ = fs::create_dir_all("cwd/error_codes");
+                fs::write(format!("cwd/error_codes/{}.json", hash), &error_metadata)
+                    .unwrap_or_else(|e| panic!("Failed to write error metadata: {}", e));
+                error_code
             }
         }
-
-        error_code
     }
 }
 
@@ -198,7 +190,7 @@ impl VisitMut for TransformVisitor {
 struct PluginConfig {
     commit_hash: String,
     file_path: String,
-    mode: String,
+    mode: Mode,
 }
 
 #[plugin_transform]
