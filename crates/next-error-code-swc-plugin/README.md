@@ -39,10 +39,10 @@ This SWC plugin adds unique error codes to JavaScript Error objects. Here's how 
 
 The plugin operates in two modes: "check" or "generate"
 
-In check mode, it verifies the existence of required files without compilation, failing if any are missing.
+In check mode, it verifies the existence of required files, failing if any are missing.
 In generate mode, it creates error code files in `packages/next/error_codes`.
 
-Generate mode is exclusively used in CI environments. The CI build will fail if any error codes are uncommitted.
+Check mode is exclusively used in CI environments. The CI build will fail if any error codes are uncommitted.
 
 # Recompiling the WASM plugin after changes
 
@@ -53,6 +53,7 @@ After modifying the WASM plugin, recompile it using this script:
 set -e
 NEXT_JS_ROOT="/Users/judegao/repos/next.js"
 cd "$NEXT_JS_ROOT/crates/next-error-code-swc-plugin"
+rustup target add wasm32-wasip1
 CARGO_PROFILE_RELEASE_STRIP=true CARGO_PROFILE_RELEASE_LTO=true cargo build --target wasm32-wasip1 --release
 mv "$NEXT_JS_ROOT/target/wasm32-wasip1/release/next_error_code_swc_plugin.wasm" "$NEXT_JS_ROOT/packages/next/"
 echo "✨ Successfully built and moved WASM plugin! 🚀"
