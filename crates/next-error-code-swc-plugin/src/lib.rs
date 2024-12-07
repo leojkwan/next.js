@@ -144,6 +144,7 @@ impl VisitMut for TransformVisitor {
 
         if let Some(code) = code {
             if let Some(new_error_expr) = new_error_expr {
+                // Object.assign($expr, { __NEXT_ERROR_CODE: "$code" })
                 *expr = Expr::Call(CallExpr {
                     span: new_error_expr.span,
                     callee: Callee::Expr(Box::new(Expr::Member(MemberExpr {
