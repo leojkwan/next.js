@@ -15,6 +15,7 @@ use swc_core::{
 enum Mode {
     Check,
     Generate,
+    Test,
 }
 
 pub struct TransformVisitor {
@@ -93,10 +94,6 @@ impl TransformVisitor {
         })
         .to_string();
 
-        // Do not do FS operations in unit tests
-        if cfg!(test) {
-            return error_code;
-        }
         match self.mode {
             Mode::Check => {
                 let error_code_path = format!("cwd/error_codes/{}.json", hash);
@@ -117,6 +114,7 @@ impl TransformVisitor {
                     .unwrap_or_else(|e| panic!("Failed to write error metadata: {}", e));
                 error_code
             }
+            Mode::Test => error_code,
         }
     }
 }
@@ -220,7 +218,7 @@ test_inline!(
         commit_hash: "0000000000".to_string(),
         file_path: "/test/file.js".to_string(),
         string_occurrences: HashMap::new(),
-        mode: "compile".to_string(),
+        mode: Mode::Test,
     }),
     realistic_api_handler,
     // Input codes
