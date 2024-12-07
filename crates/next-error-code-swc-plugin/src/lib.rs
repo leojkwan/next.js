@@ -193,44 +193,28 @@ impl VisitMut for TransformVisitor {
     }
 }
 
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PluginConfig {
+    commit_hash: String,
+    file_path: String,
+    mode: String,
+}
+
 #[plugin_transform]
 pub fn process_transform(
     mut program: Program,
     metadata: TransformPluginProgramMetadata,
 ) -> Program {
-    fn parse_config(metadata: TransformPluginProgramMetadata) -> (String, String, String) {
-        let config_str = metadata
-            .get_transform_plugin_config()
-            .unwrap_or_else(|| panic!("Failed to get transform plugin config"))
-            .to_string();
-
-        let config: serde_json::Value = serde_json::from_str(&config_str)
-            .unwrap_or_else(|e| panic!("failed to parse config: {}, config: {}", e, config_str));
-
-        (
-            config["commitHash"]
-                .as_str()
-                .unwrap_or_else(|| panic!("commitHash not found in config: {}", config_str))
-                .to_string(),
-            config["filePath"]
-                .as_str()
-                .unwrap_or_else(|| panic!("filePath not found in config: {}", config_str))
-                .to_string(),
-            config["mode"]
-                .as_str()
-                .unwrap_or_else(|| panic!("mode not found in config: {}", config_str))
-                .to_string(),
-        )
-    }
-
-    let (commit_hash, file_path, mode) = parse_config(metadata);
-    let string_occurrences: HashMap<String, usize> = HashMap::new();
+    let config: PluginConfig =
+        serde_json::from_str(&metadata.get_transform_plugin_config().unwrap())
+            .unwrap_or_else(|e| panic!("failed to parse config: {}", e));
 
     let mut visitor = TransformVisitor {
-        commit_hash,
-        file_path,
-        mode,
-        string_occurrences,
+        commit_hash: config.commit_hash,
+        file_path: config.file_path,
+        mode: config.mode,
+        string_occurrences: HashMap::new(),
     };
 
     visitor.visit_mut_program(&mut program);
