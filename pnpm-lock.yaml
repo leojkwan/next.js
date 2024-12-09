@@ -852,9 +852,6 @@ importers:
       '@swc/helpers':
         specifier: 0.5.15
         version: 0.5.15
-      babel-plugin-react-compiler:
-        specifier: '*'
-        version: 19.0.0-beta-df7b47d-20241124
       busboy:
         specifier: 1.6.0
         version: 1.6.0
@@ -1136,6 +1133,9 @@ importers:
       async-sema:
         specifier: 3.0.0
         version: 3.0.0
+      babel-plugin-react-compiler:
+        specifier: 19.0.0-beta-df7b47d-20241124
+        version: 19.0.0-beta-df7b47d-20241124
       babel-plugin-transform-define:
         specifier: 2.0.0
         version: 2.0.0
